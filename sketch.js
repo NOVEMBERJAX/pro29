@@ -1,134 +1,193 @@
-const Engine = Matter.Engine;
-const World = Matter.World;
-const Bodies = Matter.Bodies;
-const Constraint = Matter.Constraint;
+var bg,bgImg;
+var player, shooterImg, shooter_shooting;
+var zombie, zombieImg;
 
-var engine, world;
-var ball,ground;
-var stand1,stand2;
-var slingShot;
-var rock_img;
+var heart1, heart2, heart3;
+var heart1Img, heart2Img, heart3Img;
 
-function preload(){
-  rock_img=loadImage("rock.png");
+var zombieGroup,bulletGroup;
+var bullet
+
+//Write code to declare variable for bullets & assign number of bullets
+var bullets = 110;
+//Declare variable for gamestate
+var gameState = "fight"
+
+function preload()
+{
+  heart1Img = loadImage("assets/heart_1.png")
+  heart2Img = loadImage("assets/heart_2.png")
+  heart3Img = loadImage("assets/heart_3.png")
+
+  shooterImg = loadImage("assets/shooter_2.png")
+  shooter_shooting = loadImage("assets/shooter_3.png")
+
+  zombieImg = loadImage("assets/zombie.png")
+
+  bgImg = loadImage("assets/bg.jpeg")
 }
-function setup() {
 
-  createCanvas(900,400);
-  engine = Engine.create();
-  world = engine.world;
-  Engine.run(engine);
+function setup() 
+{
+  createCanvas(windowWidth,windowHeight);
+
+  bg = createSprite(displayWidth/2-20,displayHeight/2-40,20,20)
+  bg.addImage(bgImg)
+  bg.scale = 1.1
   
-  ground = new Ground();
-  stand1 = new Stand(390,300,250,10);
-  stand2 = new Stand(700,200,200,10);
+
+  player = createSprite(displayWidth-1150, displayHeight-300, 50, 50);
+  player.addImage(shooterImg)
+  player.scale = 0.3
+  player.debug = true
+  player.setCollider("rectangle",0,0,300,300)
+  
+  heart1 = createSprite(displayWidth-150,40,20,20)
+  heart1.visible = false
+  heart1.addImage("heart1",heart1Img)
+  heart1.scale = 0.4
+
+  heart2 = createSprite(displayWidth-100,40,20,20)
+  heart2.visible = false
+  heart2.addImage("heart2",heart2Img)
+  heart2.scale = 0.4
+
+  heart3 = createSprite(displayWidth-150,40,20,20)
+  heart3.addImage("heart3",heart3Img)
+  heart3.scale = 0.4
+   
+  zombieGroup = new Group()
+  //Create group for bullets
+  bulletGroup = new Group()
+
+}
+
+function draw() 
+{
+  background(0); 
+  //Write code to add GameState
+  
+  if(gameState==="fight" ){
+    if(keyDown("UP_ARROW")||touches.length>0)
+  {
+    player.y = player.y-30
+  }
+  if(keyDown("DOWN_ARROW")||touches.length>0)
+  {
+    player.y = player.y+30
+  }
+  if(keyWentDown("space"))
+  {
+    //Write code create bullet sprite
+    bullet=createSprite(displayWidth-1150,player.y-30,20,10)
+    //Add velocity to bullet
+    bullet.velocityX=20
+
+    //Add bullet intothe group
+    bulletGroup.add(bullet)
+    //change the depth of player
+    player.depth=bullet.depth;
+    player.depth=player.depth+2
+  
+    player.addImage(shooter_shooting)
+    //Decrease the count of bullet
+    bullets=bullets-1
+  }
+
+  else if(keyWentUp("space"))
+  {
+    player.addImage(shooterImg)
+  
+    
+  }
+  if(bullets === 0){
+    gameState="bullet"
+  }
+  if(zombieGroup.isTouching(bulletGroup))
+  {
+    for(var i=0;i<zombieGroup.length;i++)
+    {     
+      if(zombieGroup[i].isTouching(bulletGroup))
+      {
+        zombieGroup[i].destroy()
+        bulletGroup.destroyEach()
+      } 
+    }
+  }
+  if(zombieGroup.isTouching(player))
+  {
+    for(var i=0;i<zombieGroup.length;i++)
+    {     
+      if(zombieGroup[i].isTouching(player))
+      {
+        zombieGroup[i].destroy()
+      } 
+    }
+  }
+  enemy();
+  }
+  
+  
+  
+
+  
+  //Write code to change the gamestate when number of bullet=0
+  
+
+  //write code to destroy the zombie when bullet touches it
  
-  //level one
-  block1 = new Block(300,275,30,40);
-  block2 = new Block(330,275,30,40);
-  block3 = new Block(360,275,30,40);
-  block4 = new Block(390,275,30,40);
-  block5 = new Block(420,275,30,40);
-  block6 = new Block(450,275,30,40);
-  block7 = new Block(480,275,30,40);
-  //level two
-  block8 = new Block(330,235,30,40);
-  block9 = new Block(360,235,30,40);
-  block10 = new Block(390,235,30,40);
-  block11 = new Block(420,235,30,40);
-  block12 = new Block(450,235,30,40);
-  //level three
-  block13 = new Block(360,195,30,40);
-  block14 = new Block(390,195,30,40);
-  block15 = new Block(420,195,30,40);
-  //top
-  block16 = new Block(390,155,30,40);
-
-  //set 2 for second stand
-  //level one
-  blocks1 = new Block(640,175,30,40);
-  blocks2 = new Block(670,175,30,40);
-  blocks3 = new Block(700,175,30,40);
-  blocks4 = new Block(730,175,30,40);
-  blocks5 = new Block(760,175,30,40);
-  //level two
-  blocks6 = new Block(670,135,30,40);
-  blocks7 = new Block(700,135,30,40);
-  blocks8 = new Block(730,135,30,40);
-  //top
-  blocks9 = new Block(700,95,30,40);
-
-  //ball holder with slings
-  ball = Bodies.circle(50,200,20);
-  World.add(world,ball);
-
-  slingShot = new Slingshot(this.ball,{x:100,y:200});
-
-}
-
-function draw() {
-  background(56,44,44); 
- 
-  imageMode(CENTER);
-  // write image() to display the polygon image 
-  //use the same x and y position as ball
-  image(rock_img,ball.position.x,ball.position.y,40,40)
 
 
-  stroke(0,0,0);
-  fill("white");
-  textSize(20);
-  fill("lightyellow");
-  text("Drag the Hexagonal Stone and Release it, to launch it towards the blocks",100,30);
 
-  ground.display();
-  stand1.display();
-  stand2.display();
-
-  strokeWeight(2);
-  stroke(0,0,0);
+  //refer the code we wrote for destroying player
   
-  fill("skyblue");
-  block1.display();
-  block2.display();
-  block3.display();
-  block4.display();
-  block5.display();
-  block6.display();
-  block7.display();
-  fill("pink");
-  block8.display();
-  block9.display();
-  block10.display();
-  block11.display();
-  block12.display();
-  fill("turquoise");
-  block13.display();
-  block14.display();
-  block15.display();
-  fill("grey");
-  block16.display();
-  fill("skyblue");
-  blocks1.display();
-  blocks2.display();
-  blocks3.display();
-  blocks4.display();
-  blocks5.display();
-  fill("turquoise");
-  blocks6.display();
-  blocks7.display();
-  blocks8.display();
-  fill("pink")
-  blocks9.display();
-  fill("gold");
-
 
   
-  slingShot.display();
+  
+
+
+drawSprites();
+
+//write code destroy zombie and player and display a message in gameState "lost"
+
+if(gameState=="lost"){
+  textSize(100);
+  fill("red")
+  text("YOU LOST",400,400)
+  zombieGroup.destroyEach();
+  player.destroy()
 }
-function mouseDragged(){
-  Matter.Body.setPosition(this.ball,{x:mouseX,y:mouseY});
+//write code destroy zombie and player and display a message in gameState "won"
+else if(gameState=="won"){
+  textSize(100);
+  fill("yellow")
+  text("YOUR WON",400,400)
+  zombieGroup.destroyEach();
+  player.destroy()
 }
-function mouseReleased(){
-  slingShot.fly();
+
+//write code destroy zombie, player and bullets and display a message in gameState "bullet"
+else if(gameState=="bullet"){
+  textSize(50);
+  fill("yellow");
+  text("YOU RAN OUT OF BULLETS",470,410);
+  zombieGroup.destroyEach();
+  player.destroy();
+  bulletGroup.destroyEach()
+}
+
+}
+function enemy()
+{
+  if(frameCount%50===0)
+  {
+    zombie = createSprite(random(500,1100),random(100,500),40,40)
+    zombie.addImage(zombieImg)
+    zombie.scale = 0.15
+    zombie.velocityX = -3
+    zombie.debug= true
+    zombie.setCollider("rectangle",0,0,400,400)
+    zombie.lifetime = 400
+    zombieGroup.add(zombie)
+  }
 }
